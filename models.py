@@ -1,55 +1,84 @@
-from pydantic import BaseModel, Field, validator
-from typing import Optional, List
+from pydantic import BaseModel, validator   # v1 فقط
+from typing import Optional
 import re
 
+# ---------- Auth ----------
 class UserCreate(BaseModel):
-    username: str = Field(..., min_length=3, max_length=50)
-    email: str = Field(..., regex=r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
-    password: str = Field(..., min_length=6)
-    role: str = Field(default="agent", regex="^(owner|admin|manager|agent|viewer)$")
+    username: str
+    email: str
+    password: str
+    role: str = "agent"
+
+    @validator("username")
+    def user_length(cls, v):
+        if len(v.strip()) < 3:
+            raise ValueError("username ≥ 3")
+        return v.strip()
+
+    @validator("email")
+    def email_valid(cls, v):
+        if not re.fullmatch(r"^[\w\.-]+@[\w\.-]+\.\w+$", v):
+            raise ValueError("invalid email")
+        return v.lower()
 
 class UserLogin(BaseModel):
     username: str
     password: str
 
+# ---------- CRM ----------
 class LeadCreate(BaseModel):
     phone: str
     name: Optional[str] = None
     email: Optional[str] = None
     source: str = "manual"
     notes: Optional[str] = None
-    
-    @validator('phone')
-    def validate_phone(cls, v):
-        cleaned = re.sub(r'\D', '', v)
-        if len(cleaned) != 11:
-            raise ValueError('رقم الهاتف يجب أن يكون 11 رقما')
-        if not cleaned.startswith(('010', '011', '012', '015')):
-            raise ValueError('رقم هاتف مصري غير صحيح')
-        return cleaned
+
+    @validator("phone")
+    def clean_phone(cls, v):
+        digits = re.sub(r"\D", "", v)
+        if len(digits) != 11 or not digits.startswith(("010", "011", "012", "015")):
+            raise ValueError("egyptian mobile only")
+        return digits
 
 class LeadUpdate(BaseModel):
-    status: Optional[str] = Field(None, regex="^(new|contacted|qualified|converted|lost)$")
+    status: Optional[str] = None
     notes: Optional[str] = None
     assigned_to: Optional[str] = None
 
+    @validator("status")
+    def valid_status(cls, v):
+        if v and v not in {"new", "contacted", "qualified", "converted", "lost"}:
+            raise ValueError("invalid status")
+        return v
+
+# ---------- Hunting ----------
 class HuntRequest(BaseModel):
-    query: str = Field(..., min_length=2, max_length=200)
-    city: str = Field(..., min_length=2, max_length=50)
-    max_results: int = Field(default=20, ge=1, le=100)
-    
-    @validator('query')
-    def validate_query(cls, v):
+    query: str
+    city: str
+    max_results: int = 20
+
+    @validator("query", "city")
+    def not_empty(cls, v):
         if len(v.strip()) < 2:
-            raise ValueError('بحث قصير جداً')
+            raise ValueError("too short")
         return v.strip()
 
+# ---------- WhatsApp ----------
 class WhatsAppMessage(BaseModel):
     phone: str
-    message: str = Field(..., min_length=1, max_length=1000)
+    message: str
     template: Optional[str] = None
 
-class PermissionRequest(BaseModel):
-    user_id: str
-    permissions: List[str]
-    expires_at: Optional[str] = None
+    @validator("phone")
+    def clean_phone(cls, v):
+        digits = re.sub(r"\D", "", v)
+        if len(digits) != 11 or not digits.startswith(("010", "011", "012", "015")):
+            raise ValueError("egyptian mobile only")
+        return digits
+
+    @validator("message")
+    def msg_length(cls, v):
+        if not v or len(v.strip()) < 1:
+            raise ValueError("message required")
+        return v.strip()
+            
