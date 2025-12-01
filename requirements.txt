@@ -1,3 +1,5 @@
+docker-compose down
+docker-compose up --build
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
 supabase==1.0.3
