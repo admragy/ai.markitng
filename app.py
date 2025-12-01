@@ -1,14 +1,10 @@
-    from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
+from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional
 import os
 import time
 from datetime import datetime
-import json
-import requests
-import re
-from supabase import create_client
 
 from config import config
 from database import db
@@ -19,7 +15,6 @@ from hunter import hunter
 from whatsapp import whatsapp
 from logger import logger
 
-# ==================== FASTAPI APP ====================
 app = FastAPI(
     title=config.APP_NAME,
     version=config.VERSION,
@@ -37,7 +32,6 @@ app.add_middleware(
 
 security = HTTPBearer()
 
-# ==================== AUTH MIDDLEWARE ====================
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     payload = auth.verify_token(token)
@@ -45,7 +39,6 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(status_code=401, detail="توكن غير صالح")
     return payload
 
-# ==================== ROUTES ====================
 @app.get("/")
 async def root():
     status = config.get_status()
@@ -99,10 +92,8 @@ async def get_dashboard(user: dict = Depends(get_current_user)):
 async def start_hunt(hunt_data: HuntRequest, background_tasks: BackgroundTasks, user: dict = Depends(get_current_user)):
     if not auth.check_permission(user["role"], "create"):
         raise HTTPException(status_code=403, detail="ليس لديك صلاحية للبحث")
-    
     background_tasks.add_task(hunter.search, hunt_data.query, hunt_data.city, user["user_id"])
     logger.log("hunt_started", user["user_id"], {"query": hunt_data.query, "city": hunt_data.city})
-    
     return {
         "success": True,
         "message": f"بدأ البحث عن {hunt_data.query} في {hunt_data.city}",
@@ -113,7 +104,6 @@ async def start_hunt(hunt_data: HuntRequest, background_tasks: BackgroundTasks, 
 async def send_whatsapp(message_data: WhatsAppMessage, user: dict = Depends(get_current_user)):
     if not auth.check_permission(user["role"], "create"):
         raise HTTPException(status_code=403, detail="ليس لديك صلاحية للإرسال")
-    
     result = await whatsapp.send_message(message_data.phone, message_data.message, user["user_id"])
     logger.log("whatsapp_sent", user["user_id"], {"to": message_data.phone, "success": result["success"]})
     if not result["success"]:
@@ -124,14 +114,12 @@ async def send_whatsapp(message_data: WhatsAppMessage, user: dict = Depends(get_
 async def get_all_users(user: dict = Depends(get_current_user)):
     if user["role"] not in ["owner", "admin"]:
         raise HTTPException(status_code=403, detail="صلاحية غير كافية")
-    
     try:
         result = db.execute(table="users", operation="select")
         return {"users": result.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# ==================== RUN ====================
 if __name__ == "__main__":
     import uvicorn
     status = config.validate()
@@ -139,5 +127,4 @@ if __name__ == "__main__":
         print("⚠️ تحذيرات:")
         for error in status["errors"]:
             print(f"   ❌ {error}")
-    
     uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "8000")), reload=config.DEBUG)
