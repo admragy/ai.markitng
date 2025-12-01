@@ -1,8 +1,22 @@
+# الأساسيات
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
+
+# قاعدة البيانات
 supabase==1.0.3
+
+# HTTP requests
 requests==2.31.0
+
+# Validation
 pydantic==2.5.0
 python-multipart==0.0.6
+
+# Authentication
 python-jose[cryptography]==3.3.0
+
+# Utilities
 python-dotenv==1.0.0
+
+# WhatsApp (اختياري)
+twilio==8.13.0
