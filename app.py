@@ -1,3 +1,4 @@
+# app.py  |  توافق Python 3.13  |  Pydantic v1 فقط
 from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -5,6 +6,10 @@ from typing import List, Optional
 import os
 import time
 from datetime import datetime
+import json
+import requests
+import re
+from supabase import create_client
 
 from config import config
 from database import db
@@ -15,6 +20,7 @@ from hunter import hunter
 from whatsapp import whatsapp
 from logger import logger
 
+# ==================== FASTAPI APP ====================
 app = FastAPI(
     title=config.APP_NAME,
     version=config.VERSION,
@@ -32,6 +38,7 @@ app.add_middleware(
 
 security = HTTPBearer()
 
+# ==================== AUTH MIDDLEWARE ====================
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     payload = auth.verify_token(token)
@@ -39,6 +46,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(status_code=401, detail="توكن غير صالح")
     return payload
 
+# ==================== ROUTES ====================
 @app.get("/")
 async def root():
     status = config.get_status()
@@ -120,6 +128,7 @@ async def get_all_users(user: dict = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# ==================== RUN ====================
 if __name__ == "__main__":
     import uvicorn
     status = config.validate()
@@ -128,3 +137,4 @@ if __name__ == "__main__":
         for error in status["errors"]:
             print(f"   ❌ {error}")
     uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "8000")), reload=config.DEBUG)
+    
