@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for ai-markitng on 2025-12-02T02:56:12Z
+# fly.toml app configuration file generated for ai-markitng-pr86-w on 2025-12-02T03:44:44Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'ai-markitng'
+app = 'ai-markitng-pr86-w'
 primary_region = 'cdg'
 
 [build]
