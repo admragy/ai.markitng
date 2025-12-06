@@ -1,32 +1,28 @@
 FROM python:3.11-slim
 
-# تعيين متغيرات البيئة
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
-
-# إنشاء مجلد العمل
-WORKDIR /app
-
-# تثبيت المكتبات الأساسية
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+# تحديث النظام وتثبيت اعتماديات النظام
+RUN apt-get update && apt-get install -y \
     gcc \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# نسخ ملف المكتبات
+WORKDIR /app
+
+# نسخ ملف المتطلبات أولاً لتحسين caching
 COPY requirements.txt .
 
-# تثبيت المكتبات Python
+# تثبيت المكتبات
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# نسخ الملفات
+# نسخ جميع ملفات التطبيق
 COPY . .
 
-# فتح المنفذ
-EXPOSE 8000
+# إنشاء مجلد للوسائط
+RUN mkdir -p /app/media
+
+# المنفذ الذي يعمل عليه التطبيق
+EXPOSE 8080
 
 # أمر التشغيل
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
