@@ -1,28 +1,23 @@
-FROM python:3.11-slim
+FROMpython:3.11.9-slim
 
-# تحديث النظام وتثبيت اعتماديات النظام
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+ENVPYTHONDONTWRITEBYTECODE=1
+ENVPYTHONUNBUFFERED=1
+ENVPORT=8080
+ENVHOST=0.0.0.0
 
-WORKDIR /app
+WORKDIR/app
 
-# نسخ ملف المتطلبات أولاً لتحسين caching
-COPY requirements.txt .
+RUNapt-getupdate&&apt-getinstall-y--no-install-recommends \
+build-essential \
+gcc \
+curl \
+&&rm-rf/var/lib/apt/lists/*
 
-# تثبيت المكتبات
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+COPYrequirements.txt/requirements.txt
+RUNpipinstall--no-cache-dir--upgradepip&&pipinstall--no-cache-dir-r/requirements.txt
 
-# نسخ جميع ملفات التطبيق
-COPY . .
+COPY.
 
-# إنشاء مجلد للوسائط
-RUN mkdir -p /app/media
+EXPOSE8080
 
-# المنفذ الذي يعمل عليه التطبيق
-EXPOSE 8080
-
-# أمر التشغيل
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMDsh-c"if[-f main.py];thenpython main.py;elif[-f app.py];thenpython app.py;elif[-f server.py];thenpython server.py;elsepython -m uvicorn main:app --host 0.0.0.0 --port ${PORT};fi"
