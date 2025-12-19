@@ -1,0 +1,22 @@
+# استخدم صورة Python الرسمية كصورة أساسية
+FROM python:3.11-slim
+
+# تعيين متغيرات البيئة
+ENV PYTHONUNBUFFERED=1
+
+# تعيين مجلد العمل داخل الحاوية
+WORKDIR /app
+
+# نسخ ملف متطلبات التثبيت وتثبيت التبعيات
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# نسخ باقي ملفات المشروع
+COPY . .
+
+# تعيين منفذ الاستماع
+EXPOSE 8080
+
+# أمر التشغيل
+# استخدم uvicorn لتشغيل تطبيق FastAPI
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
